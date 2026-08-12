@@ -1,2 +1,2 @@
-# Ern-hrungsplan
+# Ernährungsplan
 Wochenplaner für gesunde Menus 
