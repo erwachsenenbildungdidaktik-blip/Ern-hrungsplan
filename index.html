@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Vegetarischer Wochenplaner mit Saisonfilter und automatischer Einkaufsliste">
+<meta name="theme-color" content="#33223D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wochenplaner">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>Wochenplaner — vegetarisch, saisonal</title>
+<style>
+:root{
+  --kalk:#EDF0EA; --kalk-tief:#DFE4DA;
+  --aubergine:#33223D; --randen:#A81E5B;
+  --curry:#C97A16; --salbei:#6F8465; --tinte:#241B29;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--kalk);color:var(--tinte);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:17px;line-height:1.55;padding-bottom:5rem}
+.wrap{max-width:54rem;margin:0 auto;padding:0 1.25rem}
+.mono{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+
+header{background:var(--aubergine);color:var(--kalk);padding:2.5rem 0 2rem}
+.eyebrow{font-family:ui-monospace,monospace;font-size:.72rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--curry)}
+h1{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-weight:600;font-size:clamp(2rem,6.5vw,3rem);line-height:1.05;
+  letter-spacing:-.015em;margin:.5rem 0 .7rem}
+.lede{max-width:34rem;color:#C9C2CE;font-size:1rem}
+
+/* Personen */
+.personen{display:flex;align-items:center;gap:.75rem;
+  border-top:1px solid #4B3A55;margin-top:1.5rem;padding-top:1.25rem}
+.personen .lab{font-family:ui-monospace,monospace;font-size:.72rem;
+  letter-spacing:.14em;text-transform:uppercase;color:#A99DB0}
+.zaehler{display:flex;align-items:center;gap:.15rem;
+  border:1px solid #6B5875;border-radius:2px;overflow:hidden}
+.zaehler button{width:2.4rem;height:2.4rem;font-size:1.3rem;line-height:1;
+  background:transparent;color:var(--kalk);border:0;cursor:pointer}
+.zaehler button:hover{background:#4B3A55}
+.zaehler button:disabled{opacity:.3;cursor:not-allowed}
+.zaehler output{min-width:2.6rem;text-align:center;
+  font-family:ui-monospace,monospace;font-size:1.15rem;font-weight:700;color:var(--curry)}
+button:focus-visible,label:focus-within,select:focus-visible{outline:2px solid var(--curry);outline-offset:2px}
+#monat{font:inherit;font-size:.9rem;background:transparent;color:var(--kalk);
+  border:1px solid #6B5875;border-radius:2px;padding:.55rem .7rem}
+#monat option{background:var(--aubergine);color:var(--kalk)}
+.karte.off{opacity:.45}
+.karte.off .kueche::after{content:" · ausser Saison";color:var(--randen)}
+
+/* Auswahl */
+.auswahl{background:var(--kalk-tief);padding:1.75rem 0}
+.auswahl h2{font-family:"Iowan Old Style",Palatino,Georgia,serif;
+  font-size:1.35rem;font-weight:600;margin-bottom:.2rem}
+.auswahl p.hint{font-size:.9rem;color:#5A4E60;margin-bottom:1rem}
+.karten{display:grid;grid-template-columns:1fr;gap:.5rem}
+@media(min-width:34rem){.karten{grid-template-columns:1fr 1fr}}
+.karte{display:flex;gap:.75rem;align-items:flex-start;background:var(--kalk);
+  border:1px solid #C8CFC2;border-radius:3px;padding:.7rem .85rem;cursor:pointer;
+  transition:border-color .15s,background .15s}
+.karte:hover{border-color:var(--salbei)}
+.karte:has(input:checked),.karte.an{border-color:var(--randen);background:#fff}
+.karte input{margin-top:.25rem;accent-color:var(--randen);width:1.1rem;height:1.1rem;flex-shrink:0}
+.karte .titel{font-size:.95rem;font-weight:600;line-height:1.25}
+.karte .kueche{font-family:ui-monospace,monospace;font-size:.65rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--salbei);display:block;margin-top:.2rem}
+.schnell{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+.jshinweis{background:#fff;border-left:3px solid var(--randen);padding:.9rem 1rem;
+  font-size:.92rem;line-height:1.5;border-radius:2px}
+.schnell button{font:inherit;font-size:.82rem;background:transparent;color:#4A4150;
+  border:1px solid #B9C2B2;border-radius:2px;padding:.35rem .8rem;cursor:pointer}
+.schnell button:hover{border-color:var(--aubergine)}
+
+/* Rezepte */
+.tag{border-top:2px solid var(--aubergine);padding-top:1.4rem;margin-bottom:2.75rem}
+.tagkopf{display:flex;gap:1rem;align-items:baseline;flex-wrap:wrap}
+.nr{font-family:ui-monospace,monospace;font-size:.75rem;color:var(--randen);
+  font-weight:700;letter-spacing:.1em}
+h2.rt{font-family:"Iowan Old Style",Palatino,Georgia,serif;
+  font-size:clamp(1.3rem,4vw,1.8rem);font-weight:600;line-height:1.15;flex:1 1 15rem}
+.warum{font-size:.94rem;color:#5A4E60;margin:.45rem 0 1rem;max-width:38rem}
+.saison{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1.1rem}
+.saison b{font:600 .68rem/1 ui-monospace,monospace;letter-spacing:.08em;
+  text-transform:uppercase;background:var(--salbei);color:#fff;padding:.35rem .55rem;border-radius:2px}
+.spalten{display:grid;grid-template-columns:1fr;gap:1.4rem}
+@media(min-width:44rem){.spalten{grid-template-columns:15rem 1fr;gap:2.25rem}}
+h3{font:600 .7rem/1 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--randen);padding-bottom:.5rem;border-bottom:1px solid var(--kalk-tief);margin-bottom:.8rem}
+ul.zutaten{list-style:none;font-size:.94rem}
+ul.zutaten li{display:flex;gap:.6rem;padding:.26rem 0;border-bottom:1px dotted #C8CFC2}
+ul.zutaten li:last-child{border:0}
+.m{font-family:ui-monospace,monospace;font-size:.86rem;font-weight:600;
+  color:var(--aubergine);min-width:5.4rem;text-align:right;flex-shrink:0}
+.wirkung{margin-top:1rem;padding-left:.8rem;border-left:2px solid var(--salbei);
+  font-size:.83rem;line-height:1.5;color:#5A4E60}
+.wirkung::before{content:"Was es bewirkt";display:block;
+  font:600 .62rem/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--salbei);margin-bottom:.35rem}
+ol.schritte{list-style:none;counter-reset:s}
+ol.schritte li{counter-increment:s;position:relative;padding:0 0 .85rem 2.1rem;font-size:.97rem}
+ol.schritte li::before{content:counter(s);position:absolute;left:0;top:.1rem;
+  font:600 .7rem/1.6 ui-monospace,monospace;width:1.5rem;height:1.5rem;text-align:center;
+  background:var(--aubergine);color:var(--kalk);border-radius:50%}
+
+/* Einkauf */
+.liste{background:var(--aubergine);color:var(--kalk);padding:2.5rem 0 3rem;margin-top:1rem}
+.liste h2{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:1.8rem;
+  font-weight:600;color:var(--kalk);margin:.35rem 0 .3rem}
+.liste .warum{color:#B7AEBD;max-width:36rem}
+.liste h3{color:var(--curry);border-color:#4B3A55}
+.rubriken{display:grid;grid-template-columns:1fr;gap:1.6rem 2.5rem;margin-top:1.5rem}
+@media(min-width:38rem){.rubriken{grid-template-columns:1fr 1fr}}
+.liste label{display:flex;gap:.65rem;align-items:flex-start;padding:.3rem 0;
+  font-size:.94rem;cursor:pointer}
+.liste input{margin-top:.32rem;accent-color:var(--curry);width:1.05rem;height:1.05rem;flex-shrink:0}
+.liste input:checked ~ .txt{opacity:.4;text-decoration:line-through}
+.txt{display:flex;gap:.5rem;flex-wrap:wrap}
+.txt .menge{font-family:ui-monospace,monospace;font-weight:600;color:var(--curry)}
+.leer{color:#B7AEBD;font-style:italic;margin-top:1.5rem}
+.notiz{border-left:3px solid var(--curry);padding:.7rem 0 .7rem 1rem;margin-top:2rem;
+  font-size:.9rem;color:#C9C2CE;max-width:36rem}
+footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
+
+@media print{
+  body{background:#fff;font-size:11pt}
+  header,.liste,.auswahl{background:#fff;color:#000}
+  header{border-bottom:2px solid #000}
+  .lede,.liste .warum,.notiz{color:#333}
+  .personen,.schnell,.auswahl .karten{display:none}
+  .tag{page-break-inside:avoid}
+  h3,.liste h3{color:#000}
+  .txt .menge{color:#000}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">Wochenplaner · vegetarisch · saisonal</p>
+    <h1>Menüs wählen,<br>Einkauf zählt sich selbst</h1>
+    <p class="lede">21 Rezepte, ohne Soja, ohne Fleischersatz, ohne Koriandergrün. Der Monat blendet vor, was gerade Saison hat. Die Einkaufsliste addiert gleiche Zutaten über alle gewählten Menüs und rechnet auf die Personenzahl hoch.</p>
+    <div class="personen">
+      <span class="lab">Personen</span>
+      <div class="zaehler">
+        <button id="minus" aria-label="Weniger Personen">−</button>
+        <output id="anz" aria-live="polite">2</output>
+        <button id="plus" aria-label="Mehr Personen">+</button>
+      </div>
+      <span class="lab" style="margin-left:.75rem">Saison</span>
+      <select id="monat" aria-label="Monat wählen"></select>
+    </div>
+  </div>
+</header>
+
+<section class="auswahl">
+  <div class="wrap">
+    <h2>Was kommt diese Woche auf den Tisch?</h2>
+    <p class="hint">Anwählen, was du kochen willst. Rezepte und Einkaufsliste passen sich sofort an.</p>
+    <noscript>
+      <p class="jshinweis"><b>Hier fehlt etwas?</b> Diese Datei braucht JavaScript. Auf dem iPhone zeigt die Vorschau in der Dateien-App kein JavaScript an: Datei lange antippen, Teilen, dann „In Safari öffnen“. Danach läuft alles.</p>
+    </noscript>
+    <div class="karten" id="karten"></div>
+    <div class="schnell">
+      <button id="alle">Alle wählen</button>
+      <button id="keine">Auswahl leeren</button>
+      <button id="drucken">Drucken</button>
+    </div>
+  </div>
+</section>
+
+<main class="wrap" id="rezepte"></main>
+
+<section class="liste">
+  <div class="wrap">
+    <p class="eyebrow">Einkauf</p>
+    <h2 id="listentitel">Was du brauchst</h2>
+    <p class="warum" id="listenhint"></p>
+    <div class="rubriken" id="rubriken"></div>
+    <p class="notiz">Trockene Hülsenfrüchte sind günstiger und schmecken besser, brauchen aber eine Nacht Einweichzeit. Wenn die Energie knapp ist, nimm Dosen. Das ist kein Kompromiss, der irgendwem schadet.</p>
+  </div>
+</section>
+
+<footer class="wrap">
+  <p>Stückzahlen werden aufgerundet, weil man keine halbe Zwiebel kauft. Im Rezept steht die exakte Menge.</p>
+</footer>
+
+<script>
+/* ---------- Daten ----------
+   e: Einheit ("g","ml","Stk","EL","TL","Bund","Zweig","Stange","L","")
+   r: Rubrik  ("gem","kuehl","huel","vorrat","gew")
+   fix: true = Menge skaliert nicht (Gewürze, Öl)          */
+
+const REZEPTE = [
+  {
+    id:"parippu", titel:"Parippu — Dhal Curry aus Sri Lanka", kueche:"Sri Lanka",
+    warum:"Der Einstieg mit deinem eigenen Gewürzvorrat. Rote Linsen zerfallen in 15 Minuten, mehr Aufwand ist das nicht.",
+    saison:["Zwiebel","Knoblauch","Vorrat"],
+    z:[
+      {n:"Rote Linsen", m:200, e:"g", r:"huel"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Kokosmilch light", m:200, e:"ml", r:"huel"},
+      {n:"Naturreis", m:150, e:"g", r:"vorrat"},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Kurkuma", e:"", r:"gew", fix:true},
+      {n:"Senfsamen", e:"", r:"gew", fix:true},
+      {n:"Curryblätter", e:"", r:"gew", fix:true},
+      {n:"Pandanblatt", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Linsen kalt abspülen, bis das Wasser klar bleibt. Reis aufsetzen.",
+      "Öl erhitzen, Senfsamen hineingeben. Warten bis sie springen, dann Curryblätter dazu — das ist der Moment, in dem die Küche gut riecht.",
+      "Zwiebel und Knoblauch weich dünsten, Kurkuma kurz mitrösten.",
+      "Linsen, doppelte Menge Wasser und Pandan dazu, 15 Minuten offen köcheln bis die Linsen zerfallen.",
+      "Kokosmilch erst zum Schluss einrühren und nur heiss werden lassen, nicht kochen. Salzen."
+    ]
+  },
+  {
+    id:"melanzane", titel:"Melanzane alla Parmigiana, aus dem Ofen", kueche:"Italien",
+    warum:"Auberginen saugen beim Braten Öl wie ein Schwamm. Im Ofen tun sie das nicht — gleicher Geschmack, ein Drittel des Fetts.",
+    saison:["Aubergine","Tomaten","Basilikum"],
+    z:[
+      {n:"Auberginen", m:2, e:"Stk", r:"gem"},
+      {n:"Tomaten", m:600, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Basilikum", m:1, e:"Bund", r:"gem"},
+      {n:"Mozzarella", m:125, e:"g", r:"kuehl"},
+      {n:"Sbrinz", m:30, e:"g", r:"kuehl"},
+      {n:"Olivenöl", m:2, e:"EL", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Ofen auf 220 °C. Auberginen längs in 1 cm dicke Scheiben, dünn mit Öl bepinseln, salzen.",
+      "20 Minuten backen, nach der Hälfte wenden. Sie sollen goldbraun und weich sein.",
+      "Zwiebel und Knoblauch dünsten, Tomaten grob gehackt dazu, 20 Minuten einkochen bis die Sauce dick ist. Salzen, Basilikum unterheben.",
+      "Schichten: Sauce, Auberginen, wenig Mozzarella. Dreimal. Sbrinz obendrauf.",
+      "30 Minuten bei 190 °C backen, dann 10 Minuten stehen lassen. Ungeduld ruiniert die Schichten."
+    ]
+  },
+  {
+    id:"thaicurry", titel:"Grünes Thai-Curry mit Aubergine und Kichererbsen", kueche:"Thailand",
+    warum:"Ohne Fischsauce fehlt Tiefe. Die holst du mit Limette, Salz und einer Prise Zucker zurück. Thai-Basilikum ersetzt das Koriandergrün.",
+    saison:["Aubergine","Bohnen","Peperoni"],
+    z:[
+      {n:"Kokosmilch light", m:400, e:"ml", r:"huel"},
+      {n:"Kichererbsen, gekocht", m:250, e:"g", r:"huel"},
+      {n:"Auberginen", m:1, e:"Stk", r:"gem"},
+      {n:"Grüne Bohnen", m:150, e:"g", r:"gem"},
+      {n:"Peperoni", m:1, e:"Stk", r:"gem"},
+      {n:"Limetten", m:1, e:"Stk", r:"gem"},
+      {n:"Thai-Basilikum", m:1, e:"Bund", r:"gem"},
+      {n:"Naturreis", m:150, e:"g", r:"vorrat"},
+      {n:"Grüne Currypaste", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Reis aufsetzen. Currypaste in wenig Öl 1 Minute anrösten, bis sie duftet.",
+      "Die Hälfte der Kokosmilch dazu, kurz aufkochen lassen.",
+      "Aubergine dazu, 8 Minuten köcheln. Dann Bohnen, Peperoni und Kichererbsen, weitere 6 Minuten.",
+      "Rest Kokosmilch, Limettensaft, Salz, eine Prise Zucker. Abschmecken bis es rund wird.",
+      "Thai-Basilikum erst vom Herd genommen unterheben."
+    ]
+  },
+  {
+    id:"borschtsch", titel:"Borschtsch mit weissen Bohnen", kueche:"Osteuropa",
+    warum:"Randen und Bohnen in einem Topf. Dill statt Koriander, und der Skyr-Klecks ersetzt den Sauerrahm ohne Verlust.",
+    saison:["Randen","Kabis","Kartoffeln","Dill"],
+    z:[
+      {n:"Randen", m:500, e:"g", r:"gem"},
+      {n:"Weisskabis", m:250, e:"g", r:"gem"},
+      {n:"Kartoffeln, festkochend", m:300, e:"g", r:"gem"},
+      {n:"Rüebli", m:1, e:"Stk", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Dill", m:1, e:"Bund", r:"gem"},
+      {n:"Weisse Bohnen, gekocht", m:250, e:"g", r:"huel"},
+      {n:"Skyr nature", m:150, e:"g", r:"kuehl"},
+      {n:"Tomatenpüree", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Rotweinessig", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Gemüsebouillon", e:"", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Randen und Rüebli grob raffeln, Kartoffeln und Kabis in Streifen schneiden. Handschuhe, sonst siehst du zwei Tage aus wie ein Tatort.",
+      "Zwiebel dünsten, Randen und Rüebli mitdünsten, Tomatenpüree kurz mitrösten.",
+      "Essig angiessen — der hält die Farbe kräftig rot statt braun.",
+      "Bouillon, Kartoffeln und Kabis dazu, 25 Minuten köcheln.",
+      "Bohnen 5 Minuten mitziehen lassen. Mit Dill und Skyr servieren."
+    ]
+  },
+  {
+    id:"fagioli", titel:"Pasta e Fagioli", kueche:"Italien",
+    warum:"Das Rezept, das beide Baustellen gleichzeitig bedient: Vollkorn plus Bohnen. Im August gibt es frische Borlotti auf dem Markt, die sind eine andere Liga.",
+    saison:["Borlotti frisch","Tomaten","Rosmarin"],
+    z:[
+      {n:"Borlotti-Bohnen, gekocht", m:300, e:"g", r:"huel"},
+      {n:"Vollkorn-Ditalini", m:150, e:"g", r:"vorrat"},
+      {n:"Tomaten", m:300, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Rüebli", m:1, e:"Stk", r:"gem"},
+      {n:"Stangensellerie", m:1, e:"Stange", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Rosmarin", m:1, e:"Zweig", r:"gem"},
+      {n:"Olivenöl", m:2, e:"EL", r:"vorrat", fix:true},
+      {n:"Gemüsebouillon", e:"", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Zwiebel, Rüebli und Sellerie fein würfeln, in Olivenöl 10 Minuten sanft weich dünsten. Nicht bräunen.",
+      "Knoblauch und Rosmarin dazu, Tomaten gehackt, 10 Minuten einkochen.",
+      "Bouillon und zwei Drittel der Bohnen dazu.",
+      "Restliche Bohnen mit etwas Bouillon pürieren und einrühren — das macht die Suppe sämig ohne Rahm.",
+      "Pasta direkt darin garkochen. Mit einem Faden Olivenöl und viel Pfeffer servieren."
+    ]
+  },
+  {
+    id:"aelpler", titel:"Älplermagronen, leichte Version", kueche:"Schweiz",
+    warum:"Nicht wegrationalisiert, nur umgebaut: Rahm raus, reduzierte Milch rein, wenig Sbrinz statt viel Käse — und dafür doppelt so viel Röstzwiebel.",
+    saison:["Kartoffeln neu","Zwiebeln","Äpfel"],
+    z:[
+      {n:"Vollkornhörnli", m:200, e:"g", r:"vorrat"},
+      {n:"Kartoffeln, festkochend", m:350, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:3, e:"Stk", r:"gem"},
+      {n:"Äpfel", m:3, e:"Stk", r:"gem"},
+      {n:"Milch", m:300, e:"ml", r:"kuehl"},
+      {n:"Sbrinz", m:60, e:"g", r:"kuehl"},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Muskatnuss", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Äpfel schälen, würfeln, mit 2 EL Wasser weich kochen, zerdrücken. Ohne Zucker, die Äpfel reichen.",
+      "Zwiebeln in feine Ringe, in Rapsöl bei mittlerer Hitze 15 Minuten langsam goldbraun rösten. Geduld, das ist der Geschmacksträger.",
+      "Milch parallel in einer weiten Pfanne bei mittlerer Hitze auf die Hälfte einkochen. Weite Pfanne wegen der Verdunstung, mittlere Hitze weil der Milchzucker sonst unten ansetzt. Rühren.",
+      "Kartoffelwürfel in knapp bemessenem Salzwasser 5 Minuten vorkochen, dann Hörnli dazu und zusammen fertig kochen. Wenig Wasser, damit die Stärke drin bleibt.",
+      "Abgiessen, reduzierte Milch angiessen, kurz durchschwenken. Stärke und eingekochte Milch binden zusammen wie Rahm. Käse und Muskat einrühren.",
+      "Mit Röstzwiebeln bedecken, Apfelmus daneben."
+    ]
+  },
+  {
+    id:"bircher", titel:"Birchermüesli, über Nacht", kueche:"Schweiz",
+    warum:"Heimlich das wirksamste Rezept der Woche. Grobe Flocken statt feiner, Skyr statt Rahm, Süsse aus Apfel und Beeren.",
+    saison:["Beeren","Frühäpfel","Baumnüsse"],
+    z:[
+      {n:"Haferflocken grob", m:100, e:"g", r:"vorrat"},
+      {n:"Milch", m:250, e:"ml", r:"kuehl"},
+      {n:"Skyr nature", m:200, e:"g", r:"kuehl"},
+      {n:"Äpfel", m:2, e:"Stk", r:"gem"},
+      {n:"Beeren", m:200, e:"g", r:"gem"},
+      {n:"Zitronen", m:1, e:"Stk", r:"gem"},
+      {n:"Baumnüsse", m:40, e:"g", r:"vorrat"},
+      {n:"Leinsamen geschrotet", m:1, e:"EL", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Haferflocken und Leinsamen mit der Milch mischen, zugedeckt über Nacht in den Kühlschrank.",
+      "Am Morgen Skyr unterrühren.",
+      "Äpfel mit Schale grob raffeln, sofort mit Zitronensaft mischen, damit sie hell bleiben.",
+      "Alles vermengen, Beeren und grob gehackte Baumnüsse darüber.",
+      "Nicht süssen, sondern 10 Minuten stehen lassen. Die Süsse kommt nach."
+    ]
+  },
+  {
+    id:"wattakka", titel:"Wattakka — Kürbiscurry aus Sri Lanka", kueche:"Sri Lanka",
+    warum:"Geröstetes Currypulver, Kokos, Zimt. Süsslich-erdig, und der Kürbis zerfällt teilweise, das bindet die Sauce von selbst.",
+    saison:["Kürbis","Zwiebel","Curryblätter"],
+    z:[
+      {n:"Kürbis (Butternuss oder Hokkaido)", m:600, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Kokosmilch light", m:300, e:"ml", r:"huel"},
+      {n:"Naturreis", m:150, e:"g", r:"vorrat"},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Geröstetes Currypulver", e:"", r:"gew", fix:true},
+      {n:"Kurkuma", e:"", r:"gew", fix:true},
+      {n:"Zimtstange", e:"", r:"gew", fix:true},
+      {n:"Curryblätter", e:"", r:"gew", fix:true},
+      {n:"Bockshornkleesamen", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Kürbis in grobe Würfel, Schale bei Hokkaido dranlassen. Reis aufsetzen.",
+      "Öl erhitzen, Bockshornklee und Curryblätter kurz anrösten, Zwiebel und Knoblauch weich dünsten.",
+      "Currypulver, Kurkuma und Zimtstange 30 Sekunden mitrösten. Nicht länger, sonst wird es bitter.",
+      "Kürbis dazu, mit der halben Kokosmilch und wenig Wasser 20 Minuten weich köcheln.",
+      "Ein Drittel des Kürbis am Pfannenrand zerdrücken — das bindet. Rest Kokosmilch dazu, salzen."
+    ]
+  },
+  {
+    id:"massaman", titel:"Massaman Curry mit Kartoffeln und Erdnüssen", kueche:"Thailand",
+    warum:"Mild, zimtig, sättigend. Die Erdnüsse sind hier kein Deko-Element, sondern arbeiten für deine Lipidwerte mit.",
+    saison:["Kartoffeln","Zwiebel","Erdnüsse"],
+    z:[
+      {n:"Kartoffeln, festkochend", m:500, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:2, e:"Stk", r:"gem"},
+      {n:"Limetten", m:1, e:"Stk", r:"gem"},
+      {n:"Kokosmilch light", m:400, e:"ml", r:"huel"},
+      {n:"Erdnüsse, ungesalzen", m:60, e:"g", r:"vorrat"},
+      {n:"Naturreis", m:150, e:"g", r:"vorrat"},
+      {n:"Massaman-Currypaste", e:"", r:"gew", fix:true},
+      {n:"Zimtstange", e:"", r:"gew", fix:true},
+      {n:"Kardamomkapseln", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Erdnüsse trocken in der Pfanne rösten, beiseite stellen. Reis aufsetzen.",
+      "Currypaste in wenig Öl anrösten, halbe Kokosmilch dazu, Zimt und Kardamom mitköcheln.",
+      "Kartoffelwürfel und Zwiebelspalten dazu, Rest Kokosmilch und etwas Wasser angiessen.",
+      "25 Minuten sanft köcheln, bis die Kartoffeln weich sind. Nicht rühren, sonst zerfallen sie.",
+      "Erdnüsse unterheben, mit Limettensaft, Salz und einer Prise Zucker abschmecken."
+    ]
+  },
+  {
+    id:"spanakopita", titel:"Spanakopita mit Bulgursalat", kueche:"Griechenland",
+    warum:"Feta sparsam, dafür viel Spinat und Dill. Der Bulgursalat daneben macht daraus eine ganze Mahlzeit statt einer Vorspeise.",
+    saison:["Spinat","Lauch","Dill"],
+    z:[
+      {n:"Spinat", m:600, e:"g", r:"gem"},
+      {n:"Lauch", m:1, e:"Stk", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Dill", m:1, e:"Bund", r:"gem"},
+      {n:"Zitronen", m:1, e:"Stk", r:"gem"},
+      {n:"Feta", m:120, e:"g", r:"kuehl"},
+      {n:"Filoteig", m:200, e:"g", r:"kuehl"},
+      {n:"Bulgur", m:120, e:"g", r:"vorrat"},
+      {n:"Olivenöl", m:3, e:"EL", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Bulgur mit kochendem Wasser übergiessen, quellen lassen. Später mit Zitrone, Öl und Kräutern mischen.",
+      "Lauch und Zwiebel weich dünsten, Spinat portionsweise zusammenfallen lassen.",
+      "Gut ausdrücken. Wirklich gut — nasse Füllung ruiniert den Teig.",
+      "Mit zerbröseltem Feta und Dill mischen, kräftig pfeffern.",
+      "Filoblätter einzeln dünn mit Öl bepinseln, schichten, füllen, einrollen. 35 Minuten bei 180 °C goldbraun backen."
+    ]
+  },
+  {
+    id:"pilzgulasch", titel:"Ungarisches Pilzgulasch mit Kartoffeln", kueche:"Ungarn",
+    warum:"Viel Paprikapulver, Kümmel, ein Löffel Sauerrahm zum Schluss. Kräuterseitlinge geben die Textur, die man sonst vom Fleisch erwartet.",
+    saison:["Pilze","Kartoffeln","Peperoni"],
+    z:[
+      {n:"Kräuterseitlinge", m:300, e:"g", r:"gem"},
+      {n:"Champignons", m:250, e:"g", r:"gem"},
+      {n:"Kartoffeln, festkochend", m:500, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:2, e:"Stk", r:"gem"},
+      {n:"Peperoni", m:1, e:"Stk", r:"gem"},
+      {n:"Sauerrahm oder Skyr", m:100, e:"g", r:"kuehl"},
+      {n:"Tomatenpüree", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Gemüsebouillon", e:"", r:"vorrat", fix:true},
+      {n:"Paprikapulver edelsüss", e:"", r:"gew", fix:true},
+      {n:"Kümmel ganz", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Pilze in dicke Scheiben, in wenig Öl scharf anbraten bis sie Farbe haben. Nicht salzen, sonst ziehen sie Wasser. Herausnehmen.",
+      "Zwiebeln in derselben Pfanne 10 Minuten weich dünsten, Tomatenpüree mitrösten.",
+      "Pfanne vom Feuer, dann erst Paprikapulver einrühren — bei voller Hitze wird es bitter.",
+      "Bouillon, Kartoffeln, Peperoni und Kümmel dazu, 25 Minuten köcheln.",
+      "Pilze zurück in die Pfanne, salzen. Sauerrahm erst auf dem Teller, nicht im Topf."
+    ]
+  },
+  {
+    id:"rajma", titel:"Rajma — Kidneybohnen-Curry", kueche:"Nordindien",
+    warum:"Deftig, sättigt wie ein Braten, kostet fast nichts. Am zweiten Tag besser als am ersten.",
+    saison:["Zwiebel","Ingwer","Tomaten"],
+    z:[
+      {n:"Kidneybohnen, gekocht", m:400, e:"g", r:"huel"},
+      {n:"Tomaten", m:400, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:2, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:3, e:"Stk", r:"gem"},
+      {n:"Ingwer", m:20, e:"g", r:"gem"},
+      {n:"Naturreis", m:150, e:"g", r:"vorrat"},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Garam Masala", e:"", r:"gew", fix:true},
+      {n:"Kreuzkümmel gemahlen", e:"", r:"gew", fix:true},
+      {n:"Kurkuma", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Zwiebeln fein hacken und geduldig 15 Minuten braun braten. Das ist die Basis, da lässt sich nicht abkürzen.",
+      "Ingwer und Knoblauch dazu, 2 Minuten. Dann Kreuzkümmel und Kurkuma kurz mitrösten.",
+      "Tomaten dazu, einkochen bis sich das Öl am Rand absetzt. Das ist das Signal, dass die Masala fertig ist.",
+      "Bohnen mit etwas Wasser dazu, 20 Minuten köcheln. Ein paar Bohnen zerdrücken für Bindung.",
+      "Garam Masala erst ganz am Schluss einrühren, sonst verfliegt es."
+    ]
+  },
+  {
+    id:"aloomatar", titel:"Aloo Matar mit Vollkorn-Chapati", kueche:"Nordindien",
+    warum:"Simpel, günstig, funktioniert auch an Tagen mit wenig Energie. Erbsen aus dem Tiefkühler sind hier völlig in Ordnung.",
+    saison:["Kartoffeln","Erbsen","Ingwer"],
+    z:[
+      {n:"Kartoffeln, festkochend", m:500, e:"g", r:"gem"},
+      {n:"Erbsen (auch tiefgekühlt)", m:250, e:"g", r:"gem"},
+      {n:"Tomaten", m:300, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Ingwer", m:15, e:"g", r:"gem"},
+      {n:"Vollkornmehl für Chapati", m:200, e:"g", r:"vorrat"},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Garam Masala", e:"", r:"gew", fix:true},
+      {n:"Kreuzkümmel ganz", e:"", r:"gew", fix:true},
+      {n:"Kurkuma", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Chapati-Teig aus Mehl, Wasser und Salz kneten, 30 Minuten ruhen lassen.",
+      "Kreuzkümmel in Öl anrösten, Zwiebel und Ingwer weich dünsten.",
+      "Kurkuma und gehackte Tomaten dazu, einkochen lassen.",
+      "Kartoffelwürfel und etwas Wasser dazu, 15 Minuten. Dann Erbsen, weitere 5 Minuten.",
+      "Chapati portionenweise in der trockenen heissen Pfanne backen, bis sie Blasen werfen. Garam Masala ins Curry."
+    ]
+  },
+  {
+    id:"gratin", titel:"Kartoffel-Lauch-Gratin mit Linsen", kueche:"Schweiz",
+    warum:"Die Linsenschicht macht aus einer Beilage eine Mahlzeit. Reduzierte Milch statt Rahm, gleicher Trick wie bei den Magronen.",
+    saison:["Kartoffeln","Lauch","Thymian"],
+    z:[
+      {n:"Kartoffeln, festkochend", m:700, e:"g", r:"gem"},
+      {n:"Lauch", m:2, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Thymian", m:1, e:"Bund", r:"gem"},
+      {n:"Berglinsen", m:150, e:"g", r:"huel"},
+      {n:"Milch", m:400, e:"ml", r:"kuehl"},
+      {n:"Sbrinz", m:50, e:"g", r:"kuehl"},
+      {n:"Muskatnuss", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Linsen in Salzwasser 20 Minuten knapp weich kochen, abgiessen.",
+      "Milch mit Knoblauch und Thymian auf zwei Drittel einkochen. Weite Pfanne, mittlere Hitze.",
+      "Kartoffeln hauchdünn hobeln, Lauch in Ringe und kurz andünsten.",
+      "Schichten: Kartoffeln, Lauch, Linsen, wieder Kartoffeln. Jede Schicht salzen und muskatnussen.",
+      "Reduzierte Milch angiessen, Sbrinz darüber, 50 Minuten bei 180 °C backen. Mit dem Messer prüfen, ob es weich ist."
+    ]
+  },
+  {
+    id:"spargel", titel:"Spargelspaghetti mit Zitrone", kueche:"Hausrezept",
+    warum:"Dein Trick: Spargel ins kalte Nudelwasser, sie garen mit hoch statt geschockt zu werden. Statt Rahm arbeitet hier Pastawasser mit Parmesan — die Stärke emulgiert mit dem Käsefett zu einer Sauce, die cremiger wird als Rahm.",
+    saison:["Grüner Spargel","Zitrone","Basilikum"],
+    z:[
+      {n:"Grüner Spargel", m:400, e:"g", r:"gem"},
+      {n:"Zitronen", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:1, e:"Stk", r:"gem"},
+      {n:"Vollkornspaghetti", m:180, e:"g", r:"vorrat"},
+      {n:"Parmesan", m:50, e:"g", r:"kuehl"},
+      {n:"Milch", m:80, e:"ml", r:"kuehl"},
+      {n:"Pouletbrust (optional)", m:250, e:"g", r:"kuehl"},
+      {n:"Olivenöl", m:1, e:"EL", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Spargel in Stücke schneiden, holzige Enden weg. In den Topf mit kaltem Salzwasser geben und zusammen aufkochen — so garen sie mit hoch und bleiben bissig.",
+      "Wenn das Wasser kocht, Spargel herausfischen und Spaghetti darin kochen. Eine Tasse Pastawasser aufheben, das ist die halbe Sauce.",
+      "Falls mit Poulet: in Streifen scharf anbraten, mit dem Saft einer halben Zitrone ablöschen und den Bratensatz loskratzen.",
+      "Knoblauch kurz mitdünsten, Spargel zurück in die Pfanne.",
+      "Pasta dazu, Milch und schluckweise Pastawasser angiessen, Parmesan einrühren und alles kräftig schwenken bis es bindet. Nicht kochen lassen, sonst flockt der Käse.",
+      "Restliche Zitrone, viel Pfeffer, abschmecken."
+    ]
+  },
+  {
+    id:"cherry", titel:"Spaghettipfanne mit Cherrytomaten und Basilikum", kueche:"Hausrezept",
+    warum:"Dein Trick: Tomaten und Basilikum werden bei den Zwiebeln zugedeckt gedämpft statt eingekocht. Die Tomaten platzen und geben ihren Saft ab, das Basilikum bleibt grün statt schwarz.",
+    saison:["Cherrytomaten","Basilikum","Knoblauch"],
+    z:[
+      {n:"Cherrytomaten", m:500, e:"g", r:"gem"},
+      {n:"Basilikum", m:1, e:"Bund", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:3, e:"Stk", r:"gem"},
+      {n:"Vollkornspaghetti", m:180, e:"g", r:"vorrat"},
+      {n:"Parmesan", m:50, e:"g", r:"kuehl"},
+      {n:"Olivenöl", m:2, e:"EL", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Pasta aufsetzen. Eine Tasse Pastawasser später aufheben.",
+      "Zwiebel und Knoblauch in Olivenöl sanft anziehen lassen, nicht bräunen.",
+      "Cherrytomaten ganz dazu, die Hälfte des Basilikums obendrauf. Deckel drauf, 8 Minuten dämpfen bis die Tomaten aufplatzen.",
+      "Deckel ab, ein paar Tomaten mit dem Löffel zerdrücken. Salzen.",
+      "Pasta und ein Schluck Pastawasser dazu, schwenken. Parmesan einrühren.",
+      "Restliches Basilikum erst vom Herd genommen darüber. Frisch bleibt frisch."
+    ]
+  },
+  {
+    id:"briam", titel:"Briam — griechisches Ofengemüse", kueche:"Griechenland",
+    warum:"Ein Blech, eine Stunde, kein Rühren. Der Trick ist, das Gemüse dünn und gleichmässig zu schneiden und ihm im Ofen wirklich Zeit zu lassen, bis die Ränder karamellisieren.",
+    saison:["Zucchini","Tomaten","Kartoffeln","Oregano"],
+    z:[
+      {n:"Zucchini", m:400, e:"g", r:"gem"},
+      {n:"Kartoffeln, festkochend", m:400, e:"g", r:"gem"},
+      {n:"Tomaten", m:400, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:2, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:3, e:"Stk", r:"gem"},
+      {n:"Peterli", m:1, e:"Bund", r:"gem"},
+      {n:"Feta", m:80, e:"g", r:"kuehl"},
+      {n:"Olivenöl", m:3, e:"EL", r:"vorrat", fix:true},
+      {n:"Oregano getrocknet", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Ofen auf 200 °C. Alles in gleichmässige Scheiben von etwa einem halben Zentimeter schneiden.",
+      "In einer grossen Schüssel mit Olivenöl, Knoblauch, Oregano und Salz gründlich durchmischen. Von Hand, nicht mit dem Löffel.",
+      "Auf ein Blech geben, nicht zu dick schichten. Zu hoch aufgetürmt dämpft es statt zu rösten.",
+      "60 Minuten backen, nach 35 Minuten einmal wenden. Die Ränder dürfen dunkel werden, das ist der Geschmack.",
+      "Feta zerbröseln und die letzten 10 Minuten mitbacken. Peterli erst zum Servieren."
+    ]
+  },
+  {
+    id:"orzotto", titel:"Gersten-Orzotto mit Zucchini und Zitrone", kueche:"Norditalien",
+    warum:"Wie Risotto, aber mit Perlgerste. Das Beta-Glucan darin ist derselbe lösliche Ballaststoff wie im Hafer — von allen Rezepten hier arbeitet dieses am härtesten für deine Werte, ohne dass man es schmeckt.",
+    saison:["Zucchini","Zitrone","Basilikum"],
+    z:[
+      {n:"Perlgerste", m:180, e:"g", r:"vorrat"},
+      {n:"Zucchini", m:400, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Zitronen", m:1, e:"Stk", r:"gem"},
+      {n:"Basilikum", m:1, e:"Bund", r:"gem"},
+      {n:"Parmesan", m:50, e:"g", r:"kuehl"},
+      {n:"Olivenöl", m:2, e:"EL", r:"vorrat", fix:true},
+      {n:"Gemüsebouillon", e:"", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Gerste kalt abspülen. Zwiebel und Knoblauch in Olivenöl glasig dünsten.",
+      "Gerste mitrösten bis sie duftet, dann schöpflöffelweise heisse Bouillon angiessen — gleiches Prinzip wie beim Risotto, nur dauert es 35 statt 18 Minuten.",
+      "Nach 20 Minuten die grob geraffelte Zucchini dazugeben. Zu früh und sie zerfällt zu Brei.",
+      "Wenn die Gerste bissfest ist: Pfanne vom Feuer, Zitronenabrieb und Parmesan einrühren, kräftig schwenken.",
+      "Zitronensaft und Basilikum zuletzt. Die Säure hebt das Ganze, ohne sie schmeckt es flach."
+    ]
+  },
+  {
+    id:"fasolakia", titel:"Fasolakia — grüne Bohnen in Tomatensauce", kueche:"Griechenland",
+    warum:"Bohnen dürfen hier weich werden, das ist kein Fehler. Griechische Küche kocht Gemüse absichtlich durch, bis es das Olivenöl aufgenommen hat.",
+    saison:["Grüne Bohnen","Tomaten","Kartoffeln"],
+    z:[
+      {n:"Grüne Bohnen", m:500, e:"g", r:"gem"},
+      {n:"Kartoffeln, festkochend", m:300, e:"g", r:"gem"},
+      {n:"Tomaten", m:400, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Peterli", m:1, e:"Bund", r:"gem"},
+      {n:"Feta", m:80, e:"g", r:"kuehl"},
+      {n:"Olivenöl", m:3, e:"EL", r:"vorrat", fix:true},
+      {n:"Vollkornbrot zum Tunken", m:200, e:"g", r:"vorrat"}
+    ],
+    s:[
+      "Bohnen putzen, Kartoffeln in grobe Stücke.",
+      "Zwiebel und Knoblauch in reichlich Olivenöl weich dünsten.",
+      "Tomaten gehackt dazu, 10 Minuten einkochen.",
+      "Bohnen und Kartoffeln dazu, mit wenig Wasser knapp bedecken. Zugedeckt 35 Minuten sanft schmoren.",
+      "Salzen, Peterli und Feta darüber. Brot dazu, die Sauce ist der eigentliche Punkt."
+    ]
+  },
+  {
+    id:"panzanella", titel:"Panzanella mit Vollkornbrot", kueche:"Toskana",
+    warum:"Aus altem Brot wird ein Hauptgericht. Wichtig: Das Brot zieht den Tomatensaft, nicht die Vinaigrette — deshalb die Tomaten vorher salzen und den Saft auffangen.",
+    saison:["Tomaten","Gurke","Basilikum","Zwiebel"],
+    z:[
+      {n:"Tomaten, sehr reif", m:600, e:"g", r:"gem"},
+      {n:"Gurke", m:1, e:"Stk", r:"gem"},
+      {n:"Rote Zwiebel", m:1, e:"Stk", r:"gem"},
+      {n:"Basilikum", m:1, e:"Bund", r:"gem"},
+      {n:"Vollkornbrot, altbacken", m:250, e:"g", r:"vorrat"},
+      {n:"Weisse Bohnen, gekocht", m:200, e:"g", r:"huel"},
+      {n:"Olivenöl", m:3, e:"EL", r:"vorrat", fix:true},
+      {n:"Rotweinessig", m:1, e:"EL", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Tomaten grob würfeln, salzen und 20 Minuten in einer Schüssel stehen lassen. Der austretende Saft ist die halbe Sauce.",
+      "Brot in Würfel reissen, im Ofen bei 180 °C 10 Minuten trocken rösten.",
+      "Zwiebelringe kurz in Essig einlegen, das nimmt ihnen die Schärfe.",
+      "Alles mit Gurke, Bohnen und Olivenöl mischen. Die Bohnen machen aus dem Salat eine Mahlzeit.",
+      "20 Minuten ziehen lassen, damit das Brot den Saft aufnimmt. Basilikum erst zum Schluss."
+    ]
+  },
+  {
+    id:"mangold", titel:"Mangold-Kichererbsen-Pfanne mit Zitrone", kueche:"Levante",
+    warum:"Zwanzig Minuten, ein Topf, und der Stiel des Mangolds wird mitverwendet statt weggeworfen. Er braucht nur einen Vorsprung von fünf Minuten.",
+    saison:["Mangold","Zitrone","Knoblauch"],
+    z:[
+      {n:"Mangold", m:500, e:"g", r:"gem"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:3, e:"Stk", r:"gem"},
+      {n:"Zitronen", m:1, e:"Stk", r:"gem"},
+      {n:"Peterli", m:1, e:"Bund", r:"gem"},
+      {n:"Kichererbsen, gekocht", m:300, e:"g", r:"huel"},
+      {n:"Bulgur", m:150, e:"g", r:"vorrat"},
+      {n:"Tahini", m:2, e:"EL", r:"vorrat"},
+      {n:"Olivenöl", m:2, e:"EL", r:"vorrat", fix:true},
+      {n:"Kreuzkümmel gemahlen", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Bulgur mit kochendem Salzwasser übergiessen und quellen lassen.",
+      "Mangold trennen: Stiele in Streifen, Blätter grob. Die Stiele sind kein Abfall, sie schmecken wie milder Sellerie.",
+      "Zwiebel und Knoblauch in Olivenöl dünsten, Kreuzkümmel mitrösten, Stiele 5 Minuten mitgaren.",
+      "Blätter und Kichererbsen dazu, zugedeckt 5 Minuten zusammenfallen lassen.",
+      "Tahini mit Zitronensaft und etwas Wasser glattrühren, darübergeben. Peterli obendrauf, Bulgur daneben."
+    ]
+  }
+];
+
+/* Monate, in denen ein Gericht saisonal Sinn ergibt (1 = Januar) */
+const SAISONMONATE = {
+  parippu:     [1,2,3,4,5,6,7,8,9,10,11,12],
+  melanzane:   [7,8,9,10],
+  thaicurry:   [7,8,9,10],
+  borschtsch:  [1,2,3,9,10,11,12],
+  fagioli:     [7,8,9,10,11],
+  aelpler:     [1,2,3,4,9,10,11,12],
+  bircher:     [1,2,3,4,5,6,7,8,9,10,11,12],
+  wattakka:    [9,10,11,12,1],
+  massaman:    [1,2,3,9,10,11,12],
+  spanakopita: [3,4,5,9,10,11],
+  pilzgulasch: [9,10,11,12],
+  rajma:       [1,2,3,4,5,6,7,8,9,10,11,12],
+  aloomatar:   [1,2,3,4,5,10,11,12],
+  gratin:      [1,2,3,10,11,12],
+  spargel:     [4,5,6],
+  cherry:      [6,7,8,9],
+  briam:       [6,7,8,9],
+  orzotto:     [5,6,7,8,9],
+  fasolakia:   [6,7,8],
+  panzanella:  [6,7,8,9],
+  mangold:     [5,6,7,8,9,10]
+};
+
+const MONATSNAMEN = ["Januar","Februar","März","April","Mai","Juni",
+  "Juli","August","September","Oktober","November","Dezember"];
+
+/* Diskrete Notiz pro Rezept: was es für LDL und Blutzucker tut */
+const WIRKUNG = {
+  parippu:     "Rote Linsen liefern löslichen Ballaststoff und halten die Glukosekurve flach. Kokosmilch light statt Vollfett, weil Kokos zu den wenigen pflanzlichen Quellen gesättigter Fette gehört.",
+  melanzane:   "Ofen statt Pfanne spart etwa zwei Drittel des Öls. Der Käse ist Würze, nicht Fundament — dort sitzt sonst das gesättigte Fett.",
+  thaicurry:   "Kichererbsen bremsen die Glukoseantwort des Reises spürbar. Naturreis statt weiss verstärkt das.",
+  borschtsch:  "Bohnen und Randen liefern viel Volumen bei wenig Stärke. Skyr ersetzt den Sauerrahm ohne Fettlast.",
+  fagioli:     "Der stärkste Doppeleffekt der Sammlung: Vollkorn und Bohnen im selben Teller. Beide senken LDL, beide flachen die Kurve ab.",
+  aelpler:     "Reduzierte Milch statt Rahm nimmt das gesättigte Fett raus, Vollkornhörnli den schnellen Zucker. Das Apfelmus ist ungesüsst, dort versteckt sich sonst die Hälfte.",
+  bircher:     "Hafer-Beta-Glucan ist der am besten belegte Ernährungshebel für LDL. Über Nacht eingeweicht und grob statt fein: beides senkt den glykämischen Index zusätzlich.",
+  wattakka:    "Kürbis ist stärkearm und bringt Volumen. Der Zimt ist nicht nur Geschmack — die Evidenz für seinen Blutzuckereffekt ist allerdings dünn, verlass dich nicht darauf.",
+  massaman:    "Erdnüsse liefern einfach ungesättigte Fette. Kartoffeln vom Vortag enthalten resistente Stärke, die weniger Glukose freisetzt.",
+  spanakopita: "Filoteig ist fettarm, solange er dünn geölt wird. Bulgur statt Weissbrot daneben hält die Kurve tiefer.",
+  pilzgulasch: "Pilze sind praktisch kalorienfrei und tragen den Geschmack. Skyr auf dem Teller statt Rahm im Topf.",
+  rajma:       "Kidneybohnen haben einen der niedrigsten glykämischen Indizes überhaupt. Am zweiten Tag zusätzlich mehr resistente Stärke.",
+  aloomatar:   "Die Erbsen bremsen die Kartoffelstärke, Vollkorn-Chapati statt Weissmehl-Naan verstärkt das.",
+  gratin:      "Die Linsenschicht ist kein Deko-Einfall: Sie senkt die Glukoselast des ganzen Gratins spürbar.",
+  spargel:     "Pastawasser und Parmesan statt Rahm sparen das gesättigte Fett. Spargel bringt Ballaststoff ohne Kalorien.",
+  cherry:      "Viel Volumen, wenig Fett. Vollkornspaghetti sind hier der eigentliche Hebel.",
+  briam:       "Olivenöl liefert einfach ungesättigte Fette — genau der Tausch, der LDL senkt. Feta bleibt sparsam.",
+  orzotto:     "Perlgerste enthält dasselbe Beta-Glucan wie Hafer. Nach dem Birchermüesli der stärkste LDL-Hebel der Sammlung, nur getarnt als Risotto.",
+  fasolakia:   "Bohnen und Olivenöl in einem Topf. Das reichlich verwendete Öl klingt viel, ist aber genau die Fettart, die du willst.",
+  panzanella:  "Bohnen, Vollkornbrot und Essig zusammen: Essig senkt die Glukoseantwort einer Mahlzeit messbar, das ist einer der wenigen Küchentricks mit solider Evidenz.",
+  mangold:     "Tahini bringt ungesättigte Fette, Bulgur einen niedrigen glykämischen Index. Kichererbsen machen beides mit."
+};
+
+const RUBRIKEN = [
+  {k:"gem",    t:"Gemüse & Früchte"},
+  {k:"kuehl",  t:"Kühlregal"},
+  {k:"huel",   t:"Hülsenfrüchte & Kokos"},
+  {k:"vorrat", t:"Vorrat"},
+  {k:"gew",    t:"Gewürze — Vorratscheck"}
+];
+
+const BASIS = 2;
+let personen = 2;
+let monat = new Date().getMonth() + 1;
+let gewaehlt = new Set();
+
+/* ---------- Helfer ---------- */
+function rundeMenge(wert, einheit){
+  if(einheit === "Stk" || einheit === "Bund" || einheit === "Zweig" || einheit === "Stange"){
+    return Math.ceil(wert - 0.001);
+  }
+  if(wert >= 100) return Math.round(wert / 10) * 10;
+  if(wert >= 10)  return Math.round(wert);
+  return Math.round(wert * 10) / 10;
+}
+function zeigeMenge(wert, einheit){
+  if(wert == null) return "nach Bedarf";
+  const g = rundeMenge(wert, einheit);
+  return einheit ? g + " " + einheit : String(g);
+}
+function faktor(){ return personen / BASIS; }
+
+/* ---------- Auswahlkarten ---------- */
+function inSaison(id){
+  const m = SAISONMONATE[id];
+  return !m || m.includes(monat);
+}
+
+function baueKarten(){
+  const ziel = document.getElementById("karten");
+  ziel.innerHTML = "";
+  const sortiert = [...REZEPTE].sort((a,b) => {
+    const sa = inSaison(a.id), sb = inSaison(b.id);
+    if(sa !== sb) return sa ? -1 : 1;
+    return a.titel.localeCompare(b.titel, "de");
+  });
+  sortiert.forEach(r => {
+    const l = document.createElement("label");
+    l.className = "karte" + (inSaison(r.id) ? "" : " off") + (gewaehlt.has(r.id) ? " an" : "");
+    l.innerHTML =
+      '<input type="checkbox" value="'+r.id+'"'+(gewaehlt.has(r.id)?" checked":"")+'>' +
+      '<span><span class="titel">'+r.titel+'</span>' +
+      '<span class="kueche">'+r.kueche+'</span></span>';
+    l.querySelector("input").addEventListener("change", e => {
+      e.target.checked ? gewaehlt.add(r.id) : gewaehlt.delete(r.id);
+      l.classList.toggle("an", e.target.checked);
+      zeichne();
+    });
+    ziel.appendChild(l);
+  });
+}
+
+/* ---------- Rezepte ---------- */
+function baueRezepte(){
+  const ziel = document.getElementById("rezepte");
+  ziel.innerHTML = "";
+  const aktiv = REZEPTE.filter(r => gewaehlt.has(r.id));
+  if(!aktiv.length) return;
+
+  aktiv.forEach((r, i) => {
+    const art = document.createElement("article");
+    art.className = "tag";
+    const zut = r.z.map(z => {
+      const wert = z.m == null ? null : (z.fix ? z.m : z.m * faktor());
+      return '<li><span class="m">'+zeigeMenge(wert, z.e)+'</span><span>'+z.n+'</span></li>';
+    }).join("");
+    art.innerHTML =
+      '<div class="tagkopf"><span class="nr">'+String(i+1).padStart(2,"0")+'</span>' +
+      '<h2 class="rt">'+r.titel+'</h2></div>' +
+      '<p class="warum">'+r.warum+'</p>' +
+      '<div class="saison">'+r.saison.map(s=>"<b>"+s+"</b>").join("")+'</div>' +
+      '<div class="spalten"><div><h3>Zutaten</h3><ul class="zutaten">'+zut+'</ul>' +
+      (WIRKUNG[r.id] ? '<p class="wirkung">'+WIRKUNG[r.id]+'</p>' : '') + '</div>' +
+      '<div><h3>So geht\'s</h3><ol class="schritte">'+r.s.map(s=>"<li>"+s+"</li>").join("")+'</ol></div></div>';
+    ziel.appendChild(art);
+  });
+}
+
+/* ---------- Einkaufsliste ---------- */
+function baueListe(){
+  const ziel = document.getElementById("rubriken");
+  const titel = document.getElementById("listentitel");
+  const hint  = document.getElementById("listenhint");
+  ziel.innerHTML = "";
+
+  const aktiv = REZEPTE.filter(r => gewaehlt.has(r.id));
+  if(!aktiv.length){
+    titel.textContent = "Noch nichts gewählt";
+    hint.innerHTML = '<span class="leer">Wähl oben mindestens ein Menü, dann füllt sich die Liste.</span>';
+    return;
+  }
+
+  titel.textContent = "Was du brauchst";
+  hint.textContent = aktiv.length + (aktiv.length === 1 ? " Menü" : " Menüs") +
+    " für " + personen + (personen === 1 ? " Person" : " Personen") +
+    ". Gleiche Zutaten sind zusammengezählt.";
+
+  // Aggregieren: Schlüssel = Name + Einheit
+  const topf = new Map();
+  aktiv.forEach(r => r.z.forEach(z => {
+    const key = z.n + "|" + z.e;
+    const wert = z.m == null ? null : (z.fix ? z.m : z.m * faktor());
+    if(!topf.has(key)) topf.set(key, {n:z.n, e:z.e, r:z.r, m:wert});
+    else {
+      const vorh = topf.get(key);
+      if(wert == null || vorh.m == null) vorh.m = vorh.m == null ? wert : vorh.m;
+      else vorh.m += wert;
+    }
+  }));
+
+  RUBRIKEN.forEach(rub => {
+    const posten = [...topf.values()]
+      .filter(p => p.r === rub.k)
+      .sort((a,b) => a.n.localeCompare(b.n, "de"));
+    if(!posten.length) return;
+    const div = document.createElement("div");
+    div.innerHTML = "<h3>"+rub.t+"</h3>" + posten.map(p =>
+      '<label><input type="checkbox"><span class="txt">' +
+      '<span class="menge">'+zeigeMenge(p.m, p.e)+'</span>' +
+      '<span>'+p.n+'</span></span></label>'
+    ).join("");
+    ziel.appendChild(div);
+  });
+}
+
+function zeichne(){ baueRezepte(); baueListe(); }
+
+/* ---------- Steuerung ---------- */
+function setzePersonen(n){
+  personen = Math.min(8, Math.max(1, n));
+  document.getElementById("anz").textContent = personen;
+  document.getElementById("minus").disabled = personen <= 1;
+  document.getElementById("plus").disabled  = personen >= 8;
+  zeichne();
+}
+document.getElementById("minus").addEventListener("click", () => setzePersonen(personen - 1));
+document.getElementById("plus").addEventListener("click",  () => setzePersonen(personen + 1));
+document.getElementById("alle").addEventListener("click", () => {
+  REZEPTE.filter(r => inSaison(r.id)).forEach(r => gewaehlt.add(r.id));
+  baueKarten(); zeichne();
+});
+document.getElementById("keine").addEventListener("click", () => {
+  gewaehlt = new Set(); baueKarten(); zeichne();
+});
+document.getElementById("drucken").addEventListener("click", () => window.print());
+
+const wahl = document.getElementById("monat");
+MONATSNAMEN.forEach((name, i) => {
+  const o = document.createElement("option");
+  o.value = i + 1; o.textContent = name;
+  if(i + 1 === monat) o.selected = true;
+  wahl.appendChild(o);
+});
+wahl.addEventListener("change", e => {
+  monat = parseInt(e.target.value, 10);
+  baueKarten(); zeichne();
+});
+
+REZEPTE.filter(r => inSaison(r.id)).forEach(r => gewaehlt.add(r.id));
+baueKarten();
+setzePersonen(2);
+</script>
+</body>
+</html>
