@@ -34,18 +34,20 @@ h1{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
 .lede{max-width:34rem;color:#C9C2CE;font-size:1rem}
 
 /* Personen */
-.personen{display:flex;align-items:center;gap:.75rem;
+.personen{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;
   border-top:1px solid #4B3A55;margin-top:1.5rem;padding-top:1.25rem}
 .personen .lab{font-family:ui-monospace,monospace;font-size:.72rem;
   letter-spacing:.14em;text-transform:uppercase;color:#A99DB0}
-.zaehler{display:flex;align-items:center;gap:.15rem;
+.zaehler{display:flex;align-items:center;gap:.15rem;flex:0 0 auto;
   border:1px solid #6B5875;border-radius:2px;overflow:hidden}
-.zaehler button{width:2.4rem;height:2.4rem;font-size:1.3rem;line-height:1;
-  background:transparent;color:var(--kalk);border:0;cursor:pointer}
+.zaehler button{width:3rem;height:3rem;min-width:3rem;font-size:1.4rem;line-height:1;
+  background:transparent;color:var(--kalk);border:0;cursor:pointer;
+  flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.zaehler button:active{background:#4B3A55}
 .zaehler button:hover{background:#4B3A55}
 .zaehler button:disabled{opacity:.3;cursor:not-allowed}
-.zaehler output{min-width:2.6rem;text-align:center;
-  font-family:ui-monospace,monospace;font-size:1.15rem;font-weight:700;color:var(--curry)}
+.zaehler output{min-width:2.8rem;flex:0 0 auto;text-align:center;
+  font-family:ui-monospace,monospace;font-size:1.2rem;font-weight:700;color:var(--curry)}
 button:focus-visible,label:focus-within,select:focus-visible{outline:2px solid var(--curry);outline-offset:2px}
 #monat{font:inherit;font-size:.9rem;background:transparent;color:var(--kalk);
   border:1px solid #6B5875;border-radius:2px;padding:.55rem .7rem}
@@ -148,11 +150,11 @@ footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
     <div class="personen">
       <span class="lab">Personen</span>
       <div class="zaehler">
-        <button id="minus" aria-label="Weniger Personen">−</button>
+        <button type="button" id="minus" aria-label="Weniger Personen">−</button>
         <output id="anz" aria-live="polite">2</output>
-        <button id="plus" aria-label="Mehr Personen">+</button>
+        <button type="button" id="plus" aria-label="Mehr Personen">+</button>
       </div>
-      <span class="lab" style="margin-left:.75rem">Saison</span>
+      <span class="lab" style="flex-basis:100%;margin-top:.5rem">Saison</span>
       <select id="monat" aria-label="Monat wählen"></select>
     </div>
   </div>
@@ -167,9 +169,9 @@ footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
     </noscript>
     <div class="karten" id="karten"></div>
     <div class="schnell">
-      <button id="alle">Alle wählen</button>
-      <button id="keine">Auswahl leeren</button>
-      <button id="drucken">Drucken</button>
+      <button type="button" id="alle">Alle wählen</button>
+      <button type="button" id="keine">Auswahl leeren</button>
+      <button type="button" id="drucken">Drucken</button>
     </div>
   </div>
 </section>
