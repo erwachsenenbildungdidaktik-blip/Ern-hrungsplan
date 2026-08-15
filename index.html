@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Wochenplaner">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<title>Wochenplaner — vegetarisch, saisonal</title>
+<title>Wochenplaner — saisonal kochen</title>
 <style>
 :root{
   --kalk:#EDF0EA; --kalk-tief:#DFE4DA;
@@ -74,6 +74,22 @@ button:focus-visible,label:focus-within,select:focus-visible{outline:2px solid v
 .schnell{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
 .jshinweis{background:#fff;border-left:3px solid var(--randen);padding:.9rem 1rem;
   font-size:.92rem;line-height:1.5;border-radius:2px}
+.dauer{font:600 .68rem/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;
+  color:#fff;background:var(--aubergine);padding:.4rem .6rem;border-radius:2px;white-space:nowrap}
+button.gross{display:flex;align-items:center;justify-content:center;gap:.6rem;
+  width:100%;margin:1.5rem 0 .5rem;padding:1.05rem 1rem;
+  background:var(--curry);color:var(--tinte);border:0;border-radius:3px;
+  font-size:1.05rem;font-weight:700;letter-spacing:.01em;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button.gross::before{content:"";width:1.1rem;height:1.1rem;flex-shrink:0;
+  background:var(--tinte);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l4 4h-3v8h-2V7H8l4-4zM5 14v5h14v-5h2v7H3v-7h2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l4 4h-3v8h-2V7H8l4-4zM5 14v5h14v-5h2v7H3v-7h2z'/%3E%3C/svg%3E") center/contain no-repeat}
+button.gross:active{background:#B06A12}
+button.gross:disabled{opacity:.35}
+.meldung{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);
+  background:var(--aubergine);color:var(--kalk);padding:.7rem 1.2rem;border-radius:3px;
+  font-size:.9rem;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:99;max-width:90vw;text-align:center}
 .schnell button{font:inherit;font-size:.82rem;background:transparent;color:#4A4150;
   border:1px solid #B9C2B2;border-radius:2px;padding:.35rem .8rem;cursor:pointer}
 .schnell button:hover{border-color:var(--aubergine)}
@@ -133,7 +149,7 @@ footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
   header,.liste,.auswahl{background:#fff;color:#000}
   header{border-bottom:2px solid #000}
   .lede,.liste .warum,.notiz{color:#333}
-  .personen,.schnell,.auswahl .karten{display:none}
+  .personen,.schnell,.auswahl .karten,button.gross{display:none}
   .tag{page-break-inside:avoid}
   h3,.liste h3{color:#000}
   .txt .menge{color:#000}
@@ -144,9 +160,9 @@ footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
 
 <header>
   <div class="wrap">
-    <p class="eyebrow">Wochenplaner · vegetarisch · saisonal</p>
+    <p class="eyebrow">Wochenplaner · saisonal · Hugo &amp; Cherie</p>
     <h1>Menüs wählen,<br>Einkauf zählt sich selbst</h1>
-    <p class="lede">21 Rezepte, ohne Soja, ohne Fleischersatz, ohne Koriandergrün. Der Monat blendet vor, was gerade Saison hat. Die Einkaufsliste addiert gleiche Zutaten über alle gewählten Menüs und rechnet auf die Personenzahl hoch.</p>
+    <p class="lede">25 Rezepte, überwiegend vegetarisch, ohne Soja, ohne Fleischersatz, ohne Koriandergrün. Der Monat blendet vor, was gerade Saison hat. Die Einkaufsliste addiert gleiche Zutaten über alle gewählten Menüs und rechnet auf die Personenzahl hoch.</p>
     <div class="personen">
       <span class="lab">Personen</span>
       <div class="zaehler">
@@ -183,6 +199,7 @@ footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
     <p class="eyebrow">Einkauf</p>
     <h2 id="listentitel">Was du brauchst</h2>
     <p class="warum" id="listenhint"></p>
+    <button type="button" id="teilen" class="gross">Einkaufsliste teilen</button>
     <div class="rubriken" id="rubriken"></div>
     <p class="notiz">Trockene Hülsenfrüchte sind günstiger und schmecken besser, brauchen aber eine Nacht Einweichzeit. Wenn die Energie knapp ist, nimm Dosen. Das ist kein Kompromiss, der irgendwem schadet.</p>
   </div>
@@ -687,6 +704,98 @@ const REZEPTE = [
       "Blätter und Kichererbsen dazu, zugedeckt 5 Minuten zusammenfallen lassen.",
       "Tahini mit Zitronensaft und etwas Wasser glattrühren, darübergeben. Peterli obendrauf, Bulgur daneben."
     ]
+  },
+  {
+    id:"porridge", titel:"Porridge, richtig gemacht", kueche:"Hausrezept",
+    warum:"Die warme Winterversion des Birchermüeslis, mit Milch gekocht und richtig sämig. Zwei Dinge entscheiden über gut oder klebrig: grobe Flocken statt Instant, und eine kräftige Prise Salz.",
+    saison:["Äpfel","Beeren","Baumnüsse"],
+    z:[
+      {n:"Haferflocken grob", m:90, e:"g", r:"vorrat"},
+      {n:"Milch", m:400, e:"ml", r:"kuehl"},
+      {n:"Äpfel oder Bananen", m:200, e:"g", r:"gem"},
+      {n:"Baumnüsse", m:30, e:"g", r:"vorrat"},
+      {n:"Leinsamen geschrotet", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Ahornsirup", m:1, e:"TL", r:"vorrat", fix:true},
+      {n:"Zimt", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Flocken mit der ganzen Milch in die Pfanne, kräftige Prise Salz dazu. Das Salz ist nicht optional, sonst schmeckt es nach nichts.",
+      "Aufkochen, dann klein stellen. Milch brennt schneller an als Wasser, also mittlere Hitze und regelmässig rühren.",
+      "12 bis 15 Minuten köcheln. Länger als mit Wasser, dafür wird es cremiger.",
+      "Für die Sämigkeit: gegen Ende ein paar Mal mit dem Löffel gegen den Pfannenrand drücken. Das setzt Stärke frei, gleiches Prinzip wie beim Risotto.",
+      "Vom Herd, Leinsamen und Zimt einrühren, 2 Minuten quellen lassen. Es dickt dabei noch nach.",
+      "Obst und Nüsse obendrauf, Sirup zum Schluss darüberziehen statt unterrühren. Oben liegend trifft er direkt die Zunge, du brauchst deutlich weniger für denselben Effekt."
+    ]
+  },
+  {
+    id:"brot", titel:"Übernacht-Vollkornbrot mit Hafer und Leinsamen", kueche:"Hausrezept",
+    warum:"Kein Kneten, keine Maschine, kein Sauerteigstarter. Die lange kalte Gare macht die Arbeit. Zwei Minuten Aufwand am Abend, zwei am Morgen.",
+    saison:["Ganzjährig"],
+    z:[
+      {n:"Vollkornmehl (Weizen oder Dinkel)", m:400, e:"g", r:"vorrat"},
+      {n:"Weissmehl", m:100, e:"g", r:"vorrat"},
+      {n:"Haferflocken grob", m:60, e:"g", r:"vorrat"},
+      {n:"Leinsamen geschrotet", m:40, e:"g", r:"vorrat"},
+      {n:"Wasser lauwarm", m:400, e:"ml", r:"vorrat"},
+      {n:"Trockenhefe", m:3, e:"g", r:"vorrat"},
+      {n:"Salz", m:10, e:"g", r:"vorrat"}
+    ],
+    s:[
+      "Alles trocken vermischen, Wasser dazu, mit dem Löffel zu einem klebrigen Teig rühren. Nicht kneten, er soll unschön aussehen.",
+      "Zugedeckt 12 bis 18 Stunden bei Zimmertemperatur stehen lassen. Über Nacht ist ideal.",
+      "Am Morgen auf bemehlter Fläche zweimal falten wie einen Brief, mehr nicht. 45 Minuten ruhen lassen.",
+      "Ofen mit gusseisernem Topf samt Deckel auf 240 °C vorheizen. Volle 30 Minuten, der Topf muss richtig heiss sein.",
+      "Teig in den heissen Topf stürzen, Deckel drauf, 30 Minuten backen. Dann Deckel ab, 15 Minuten bei 220 °C bräunen.",
+      "Vollständig auskühlen lassen vor dem Schneiden. Sonst wird die Krume klitschig."
+    ]
+  },
+  {
+    id:"hoernli", titel:"Hörnli und Ghackets, Linsenversion", kueche:"Schweiz",
+    warum:"Halb Hackfleisch, halb Belugalinsen. Im Biss praktisch identisch, aber der Ballaststoff verdoppelt sich und das gesättigte Fett halbiert sich. Das merkt am Tisch niemand.",
+    saison:["Zwiebel","Äpfel","Tomaten"],
+    z:[
+      {n:"Belugalinsen", m:120, e:"g", r:"huel"},
+      {n:"Hackfleisch", m:250, e:"g", r:"kuehl"},
+      {n:"Vollkornhörnli", m:250, e:"g", r:"vorrat"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Knoblauchzehen", m:2, e:"Stk", r:"gem"},
+      {n:"Tomaten", m:300, e:"g", r:"gem"},
+      {n:"Äpfel", m:4, e:"Stk", r:"gem"},
+      {n:"Tomatenpüree", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Majoran getrocknet", e:"", r:"gew", fix:true}
+    ],
+    s:[
+      "Äpfel schälen, würfeln, mit wenig Wasser weich kochen, zerdrücken. Ohne Zucker.",
+      "Belugalinsen 20 Minuten knapp weich kochen, abgiessen. Sie sollen Biss behalten, das ist der Punkt.",
+      "Hackfleisch in wenig Öl krümelig anbraten, Zwiebel und Knoblauch mitdünsten.",
+      "Tomatenpüree kurz mitrösten, gehackte Tomaten und Majoran dazu, 15 Minuten einkochen.",
+      "Linsen unterheben, 5 Minuten mitziehen lassen. Hörnli separat kochen, Apfelmus daneben."
+    ]
+  },
+  {
+    id:"geschnetzeltes", titel:"Züri Geschnetzeltes mit Pilzübergewicht", kueche:"Schweiz",
+    warum:"Pilzanteil rauf, Fleischanteil runter, Rahm ersetzt durch reduzierte Milch mit einem Löffel Senf. Der Senf bringt Bindung und einen Tick Säure, den der Rahm sonst zudeckt.",
+    saison:["Pilze","Zwiebel","Peterli"],
+    z:[
+      {n:"Champignons", m:400, e:"g", r:"gem"},
+      {n:"Kalbfleisch geschnetzelt", m:250, e:"g", r:"kuehl"},
+      {n:"Zwiebeln", m:1, e:"Stk", r:"gem"},
+      {n:"Peterli", m:1, e:"Bund", r:"gem"},
+      {n:"Zitronen", m:1, e:"Stk", r:"gem"},
+      {n:"Milch", m:250, e:"ml", r:"kuehl"},
+      {n:"Weisswein", m:100, e:"ml", r:"vorrat", fix:true},
+      {n:"Dijonsenf", m:1, e:"EL", r:"vorrat", fix:true},
+      {n:"Rapsöl", m:1, e:"EL", r:"vorrat", fix:true}
+    ],
+    s:[
+      "Milch in einer weiten Pfanne auf die Hälfte einkochen, beiseite stellen.",
+      "Fleisch portionsweise sehr heiss und kurz anbraten, herausnehmen. Zu viel auf einmal und es kocht statt zu braten.",
+      "Pilze in derselben Pfanne scharf anbraten bis sie Farbe haben, erst dann salzen. Zwiebeln mitdünsten.",
+      "Mit Weisswein ablöschen, Bratensatz loskratzen, fast vollständig einkochen lassen.",
+      "Reduzierte Milch und Senf einrühren, kurz binden lassen. Fleisch zurück, nur noch heiss werden lassen.",
+      "Zitronensaft und Peterli zum Schluss. Dazu Rösti oder Vollkornreis."
+    ]
   }
 ];
 
@@ -712,11 +821,32 @@ const SAISONMONATE = {
   orzotto:     [5,6,7,8,9],
   fasolakia:   [6,7,8],
   panzanella:  [6,7,8,9],
-  mangold:     [5,6,7,8,9,10]
+  mangold:     [5,6,7,8,9,10],
+  porridge:    [1,2,3,4,9,10,11,12],
+  brot:        [1,2,3,4,5,6,7,8,9,10,11,12],
+  hoernli:     [1,2,3,4,9,10,11,12],
+  geschnetzeltes: [1,2,3,9,10,11,12]
 };
 
 const MONATSNAMEN = ["Januar","Februar","März","April","Mai","Juni",
   "Juli","August","September","Oktober","November","Dezember"];
+
+/* Zeitaufwand in Minuten am Herd. nacht = braucht zusätzlich Vorlauf über Nacht. */
+const ZEIT = {
+  parippu:30, melanzane:75, thaicurry:30, borschtsch:50, fagioli:40,
+  aelpler:40, bircher:10, wattakka:35, massaman:40, spanakopita:60,
+  pilzgulasch:45, rajma:45, aloomatar:40, gratin:75, spargel:25,
+  cherry:25, briam:75, orzotto:45, fasolakia:50, panzanella:35,
+  mangold:25, porridge:20, brot:20, hoernli:40, geschnetzeltes:30
+};
+const NACHT = ["bircher","brot"];
+
+function zeitText(id){
+  const m = ZEIT[id];
+  if(!m) return "";
+  const t = m >= 60 ? (m % 60 === 0 ? (m/60)+" h" : Math.floor(m/60)+" h "+(m%60)+" min") : m+" min";
+  return NACHT.indexOf(id) > -1 ? t + " + über Nacht" : t;
+}
 
 /* Diskrete Notiz pro Rezept: was es für LDL und Blutzucker tut */
 const WIRKUNG = {
@@ -740,7 +870,11 @@ const WIRKUNG = {
   orzotto:     "Perlgerste enthält dasselbe Beta-Glucan wie Hafer. Nach dem Birchermüesli der stärkste LDL-Hebel der Sammlung, nur getarnt als Risotto.",
   fasolakia:   "Bohnen und Olivenöl in einem Topf. Das reichlich verwendete Öl klingt viel, ist aber genau die Fettart, die du willst.",
   panzanella:  "Bohnen, Vollkornbrot und Essig zusammen: Essig senkt die Glukoseantwort einer Mahlzeit messbar, das ist einer der wenigen Küchentricks mit solider Evidenz.",
-  mangold:     "Tahini bringt ungesättigte Fette, Bulgur einen niedrigen glykämischen Index. Kichererbsen machen beides mit."
+  mangold:     "Tahini bringt ungesättigte Fette, Bulgur einen niedrigen glykämischen Index. Kichererbsen machen beides mit.",
+  porridge:    "Beta-Glucan aus Hafer, der am besten belegte Ernährungshebel für LDL. Der Teelöffel Sirup fällt hier kaum ins Gewicht: Ballaststoff, Nüsse und Leinsamen bremsen die Aufnahme deutlich ab. Äpfel sind die tiefere Variante als Bananen, beides geht.",
+  brot:        "Hafer und Leinsamen liefern löslichen Ballaststoff, die lange Gare senkt den glykämischen Index gegenüber schnell gebackenem Brot. Vom Vortag getoastet steigt der Anteil resistenter Stärke zusätzlich.",
+  hoernli:     "Die halbierte Fleischmenge halbiert das gesättigte Fett, die Linsen verdoppeln den Ballaststoff. Vollkornhörnli und ungesüsstes Apfelmus erledigen den Rest.",
+  geschnetzeltes: "Reduzierte Milch statt Rahm ist hier der grösste Einzelhebel. Pilze tragen den Geschmack und ersetzen einen Teil des Fleisches ohne Verlust."
 };
 
 const RUBRIKEN = [
@@ -792,7 +926,7 @@ function baueKarten(){
     l.innerHTML =
       '<input type="checkbox" value="'+r.id+'"'+(gewaehlt.has(r.id)?" checked":"")+'>' +
       '<span><span class="titel">'+r.titel+'</span>' +
-      '<span class="kueche">'+r.kueche+'</span></span>';
+      '<span class="kueche">'+r.kueche+' · '+zeitText(r.id)+'</span></span>';
     l.querySelector("input").addEventListener("change", e => {
       e.target.checked ? gewaehlt.add(r.id) : gewaehlt.delete(r.id);
       l.classList.toggle("an", e.target.checked);
@@ -818,7 +952,8 @@ function baueRezepte(){
     }).join("");
     art.innerHTML =
       '<div class="tagkopf"><span class="nr">'+String(i+1).padStart(2,"0")+'</span>' +
-      '<h2 class="rt">'+r.titel+'</h2></div>' +
+      '<h2 class="rt">'+r.titel+'</h2>' +
+      '<span class="dauer">'+zeitText(r.id)+'</span></div>' +
       '<p class="warum">'+r.warum+'</p>' +
       '<div class="saison">'+r.saison.map(s=>"<b>"+s+"</b>").join("")+'</div>' +
       '<div class="spalten"><div><h3>Zutaten</h3><ul class="zutaten">'+zut+'</ul>' +
@@ -875,7 +1010,12 @@ function baueListe(){
   });
 }
 
-function zeichne(){ baueRezepte(); baueListe(); }
+function zeichne(){
+  baueRezepte();
+  baueListe();
+  const t = document.getElementById("teilen");
+  if(t) t.disabled = gewaehlt.size === 0;
+}
 
 /* ---------- Steuerung ---------- */
 function setzePersonen(n){
@@ -895,6 +1035,73 @@ document.getElementById("keine").addEventListener("click", () => {
   gewaehlt = new Set(); baueKarten(); zeichne();
 });
 document.getElementById("drucken").addEventListener("click", () => window.print());
+
+/* ---------- Export ---------- */
+function baueText(){
+  const aktiv = REZEPTE.filter(r => gewaehlt.has(r.id));
+  if(!aktiv.length) return null;
+
+  let t = "WOCHENPLAN — " + MONATSNAMEN[monat-1] + "\n";
+  t += personen + (personen === 1 ? " Person" : " Personen") + "\n\n";
+
+  t += "MENÜS\n";
+  aktiv.forEach(r => { t += "· " + r.titel + "  (" + zeitText(r.id) + ")\n"; });
+
+  const topf = new Map();
+  aktiv.forEach(r => r.z.forEach(z => {
+    const key = z.n + "|" + z.e;
+    const wert = z.m == null ? null : (z.fix ? z.m : z.m * faktor());
+    if(!topf.has(key)) topf.set(key, {n:z.n, e:z.e, r:z.r, m:wert});
+    else {
+      const v = topf.get(key);
+      if(wert == null || v.m == null) v.m = v.m == null ? wert : v.m;
+      else v.m += wert;
+    }
+  }));
+
+  t += "\nEINKAUF\n";
+  RUBRIKEN.forEach(rub => {
+    const posten = [...topf.values()].filter(p => p.r === rub.k)
+      .sort((a,b) => a.n.localeCompare(b.n, "de"));
+    if(!posten.length) return;
+    t += "\n" + rub.t.toUpperCase() + "\n";
+    posten.forEach(p => { t += "[ ] " + zeigeMenge(p.m, p.e) + "  " + p.n + "\n"; });
+  });
+  return t;
+}
+
+function meldung(txt){
+  const alt = document.querySelector(".meldung");
+  if(alt) alt.remove();
+  const el = document.createElement("div");
+  el.className = "meldung";
+  el.textContent = txt;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+document.getElementById("teilen").addEventListener("click", async () => {
+  const txt = baueText();
+  if(!txt){ meldung("Zuerst mindestens ein Menü wählen."); return; }
+
+  if(navigator.share){
+    try { await navigator.share({title:"Wochenplan", text:txt}); return; }
+    catch(e){ if(e && e.name === "AbortError") return; }
+  }
+  try {
+    await navigator.clipboard.writeText(txt);
+    meldung("Liste kopiert — jetzt irgendwo einfügen.");
+    return;
+  } catch(e){ /* weiter zum Download */ }
+
+  const blob = new Blob([txt], {type:"text/plain;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "wochenplan.txt";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  meldung("Als Datei gespeichert.");
+});
 
 const wahl = document.getElementById("monat");
 MONATSNAMEN.forEach((name, i) => {
