@@ -87,6 +87,26 @@ button.gross::before{content:"";width:1.1rem;height:1.1rem;flex-shrink:0;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l4 4h-3v8h-2V7H8l4-4zM5 14v5h14v-5h2v7H3v-7h2z'/%3E%3C/svg%3E") center/contain no-repeat}
 button.gross:active{background:#B06A12}
 button.gross:disabled{opacity:.35}
+
+/* Eigene Einträge */
+.plus{display:inline-flex;align-items:center;gap:.4rem;margin-top:.5rem;
+  background:transparent;border:1px dashed #6B5875;border-radius:2px;
+  color:#B7AEBD;font-size:.85rem;padding:.4rem .75rem;cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.plus:active{background:#4B3A55}
+.auswahl .plus{border-color:#A9B4A2;color:#4A4150}
+.auswahl .plus:active{background:var(--kalk)}
+.eingabe{display:flex;gap:.4rem;margin-top:.5rem}
+.eingabe input{flex:1 1 auto;min-width:0;font:inherit;font-size:.9rem;
+  padding:.5rem .6rem;border:1px solid #6B5875;border-radius:2px;
+  background:transparent;color:var(--kalk)}
+.auswahl .eingabe input{border-color:#B9C2B2;color:var(--tinte);background:#fff}
+.eingabe button{font:inherit;font-size:.9rem;padding:.5rem .9rem;border-radius:2px;
+  background:var(--curry);color:var(--tinte);border:0;font-weight:600;cursor:pointer}
+.weg{background:none;border:0;color:#8A7F90;font-size:1.1rem;line-height:1;
+  padding:0 .3rem;cursor:pointer;flex-shrink:0}
+.karte .weg{color:#8A8F86}
+.eigen{font-style:italic}
 .meldung{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);
   background:var(--aubergine);color:var(--kalk);padding:.7rem 1.2rem;border-radius:3px;
   font-size:.9rem;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:99;max-width:90vw;text-align:center}
@@ -149,7 +169,7 @@ footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
   header,.liste,.auswahl{background:#fff;color:#000}
   header{border-bottom:2px solid #000}
   .lede,.liste .warum,.notiz{color:#333}
-  .personen,.schnell,.auswahl .karten,button.gross{display:none}
+  .personen,.schnell,.auswahl .karten,button.gross,.plus,.eingabe,.weg{display:none}
   .tag{page-break-inside:avoid}
   h3,.liste h3{color:#000}
   .txt .menge{color:#000}
@@ -184,6 +204,7 @@ footer{padding-top:2.5rem;font-size:.85rem;color:#5A4E60}
       <p class="jshinweis"><b>Hier fehlt etwas?</b> Diese Datei braucht JavaScript. Auf dem iPhone zeigt die Vorschau in der Dateien-App kein JavaScript an: Datei lange antippen, Teilen, dann „In Safari öffnen“. Danach läuft alles.</p>
     </noscript>
     <div class="karten" id="karten"></div>
+    <div id="menueNeu"></div>
     <div class="schnell">
       <button type="button" id="alle">Alle wählen</button>
       <button type="button" id="keine">Auswahl leeren</button>
@@ -889,6 +910,9 @@ const BASIS = 2;
 let personen = 2;
 let monat = new Date().getMonth() + 1;
 let gewaehlt = new Set();
+let eigeneMenues = [];   // {id, titel}
+let eigenePosten = [];   // {id, rubrik, text}
+let zaehlerId = 0;
 
 /* ---------- Helfer ---------- */
 function rundeMenge(wert, einheit){
@@ -907,6 +931,44 @@ function zeigeMenge(wert, einheit){
 function faktor(){ return personen / BASIS; }
 
 /* ---------- Auswahlkarten ---------- */
+/* Baut einen "+ ..."-Knopf, der bei Klick ein Eingabefeld einblendet. */
+function machPlus(label, platzhalter, beiEingabe){
+  const box = document.createElement("div");
+  const knopf = document.createElement("button");
+  knopf.type = "button";
+  knopf.className = "plus";
+  knopf.textContent = "+ " + label;
+  box.appendChild(knopf);
+
+  knopf.addEventListener("click", () => {
+    knopf.style.display = "none";
+    const zeile = document.createElement("div");
+    zeile.className = "eingabe";
+    const feld = document.createElement("input");
+    feld.type = "text";
+    feld.placeholder = platzhalter;
+    const ok = document.createElement("button");
+    ok.type = "button";
+    ok.textContent = "OK";
+    zeile.appendChild(feld);
+    zeile.appendChild(ok);
+    box.appendChild(zeile);
+    feld.focus();
+
+    const senden = () => {
+      const wert = feld.value.trim();
+      if(wert) beiEingabe(wert);
+      else { zeile.remove(); knopf.style.display = ""; }
+    };
+    ok.addEventListener("click", senden);
+    feld.addEventListener("keydown", e => {
+      if(e.key === "Enter"){ e.preventDefault(); senden(); }
+      if(e.key === "Escape"){ zeile.remove(); knopf.style.display = ""; }
+    });
+  });
+  return box;
+}
+
 function inSaison(id){
   const m = SAISONMONATE[id];
   return !m || m.includes(monat);
@@ -915,22 +977,31 @@ function inSaison(id){
 function baueKarten(){
   const ziel = document.getElementById("karten");
   ziel.innerHTML = "";
-  const sortiert = [...REZEPTE].sort((a,b) => {
+  const sortiert = [...REZEPTE, ...eigeneMenues].sort((a,b) => {
     const sa = inSaison(a.id), sb = inSaison(b.id);
     if(sa !== sb) return sa ? -1 : 1;
     return a.titel.localeCompare(b.titel, "de");
   });
   sortiert.forEach(r => {
+    const eigen = !!r.eigen;
     const l = document.createElement("label");
-    l.className = "karte" + (inSaison(r.id) ? "" : " off") + (gewaehlt.has(r.id) ? " an" : "");
+    l.className = "karte" + (eigen || inSaison(r.id) ? "" : " off") + (gewaehlt.has(r.id) ? " an" : "");
+    const unten = eigen ? "Eigenes Menü" : r.kueche + " · " + zeitText(r.id);
     l.innerHTML =
       '<input type="checkbox" value="'+r.id+'"'+(gewaehlt.has(r.id)?" checked":"")+'>' +
-      '<span><span class="titel">'+r.titel+'</span>' +
-      '<span class="kueche">'+r.kueche+' · '+zeitText(r.id)+'</span></span>';
+      '<span style="flex:1"><span class="titel'+(eigen?' eigen':'')+'">'+r.titel+'</span>' +
+      '<span class="kueche">'+unten+'</span></span>' +
+      (eigen ? '<button type="button" class="weg" aria-label="Entfernen">&times;</button>' : '');
     l.querySelector("input").addEventListener("change", e => {
       e.target.checked ? gewaehlt.add(r.id) : gewaehlt.delete(r.id);
       l.classList.toggle("an", e.target.checked);
       zeichne();
+    });
+    if(eigen) l.querySelector(".weg").addEventListener("click", e => {
+      e.preventDefault(); e.stopPropagation();
+      eigeneMenues = eigeneMenues.filter(m => m.id !== r.id);
+      gewaehlt.delete(r.id);
+      baueKarten(); zeichne();
     });
     ziel.appendChild(l);
   });
@@ -971,7 +1042,7 @@ function baueListe(){
   ziel.innerHTML = "";
 
   const aktiv = REZEPTE.filter(r => gewaehlt.has(r.id));
-  if(!aktiv.length){
+  if(!aktiv.length && !eigenePosten.length){
     titel.textContent = "Noch nichts gewählt";
     hint.innerHTML = '<span class="leer">Wähl oben mindestens ein Menü, dann füllt sich die Liste.</span>';
     return;
@@ -999,13 +1070,32 @@ function baueListe(){
     const posten = [...topf.values()]
       .filter(p => p.r === rub.k)
       .sort((a,b) => a.n.localeCompare(b.n, "de"));
-    if(!posten.length) return;
+    const eigene = eigenePosten.filter(p => p.rubrik === rub.k);
+
     const div = document.createElement("div");
     div.innerHTML = "<h3>"+rub.t+"</h3>" + posten.map(p =>
       '<label><input type="checkbox"><span class="txt">' +
       '<span class="menge">'+zeigeMenge(p.m, p.e)+'</span>' +
       '<span>'+p.n+'</span></span></label>'
     ).join("");
+
+    eigene.forEach(p => {
+      const l = document.createElement("label");
+      l.innerHTML = '<input type="checkbox"><span class="txt eigen">' +
+        '<span>'+p.text+'</span></span>' +
+        '<button type="button" class="weg" aria-label="Entfernen">&times;</button>';
+      l.querySelector(".weg").addEventListener("click", e => {
+        e.preventDefault(); e.stopPropagation();
+        eigenePosten = eigenePosten.filter(x => x.id !== p.id);
+        baueListe();
+      });
+      div.appendChild(l);
+    });
+
+    div.appendChild(machPlus("Zutat", "z.B. 1 Pack Kaffee", txt => {
+      eigenePosten.push({id: ++zaehlerId, rubrik: rub.k, text: txt});
+      baueListe();
+    }));
     ziel.appendChild(div);
   });
 }
@@ -1014,7 +1104,7 @@ function zeichne(){
   baueRezepte();
   baueListe();
   const t = document.getElementById("teilen");
-  if(t) t.disabled = gewaehlt.size === 0;
+  if(t) t.disabled = gewaehlt.size === 0 && eigenePosten.length === 0;
 }
 
 /* ---------- Steuerung ---------- */
@@ -1039,13 +1129,15 @@ document.getElementById("drucken").addEventListener("click", () => window.print(
 /* ---------- Export ---------- */
 function baueText(){
   const aktiv = REZEPTE.filter(r => gewaehlt.has(r.id));
-  if(!aktiv.length) return null;
+  if(!aktiv.length && !eigeneMenues.some(m => gewaehlt.has(m.id)) && !eigenePosten.length) return null;
 
   let t = "WOCHENPLAN — " + MONATSNAMEN[monat-1] + "\n";
   t += personen + (personen === 1 ? " Person" : " Personen") + "\n\n";
 
   t += "MENÜS\n";
   aktiv.forEach(r => { t += "· " + r.titel + "  (" + zeitText(r.id) + ")\n"; });
+  eigeneMenues.filter(m => gewaehlt.has(m.id))
+    .forEach(m => { t += "· " + m.titel + "\n"; });
 
   const topf = new Map();
   aktiv.forEach(r => r.z.forEach(z => {
@@ -1063,9 +1155,11 @@ function baueText(){
   RUBRIKEN.forEach(rub => {
     const posten = [...topf.values()].filter(p => p.r === rub.k)
       .sort((a,b) => a.n.localeCompare(b.n, "de"));
-    if(!posten.length) return;
+    const eigene = eigenePosten.filter(p => p.rubrik === rub.k);
+    if(!posten.length && !eigene.length) return;
     t += "\n" + rub.t.toUpperCase() + "\n";
     posten.forEach(p => { t += "[ ] " + zeigeMenge(p.m, p.e) + "  " + p.n + "\n"; });
+    eigene.forEach(p => { t += "[ ] " + p.text + "\n"; });
   });
   return t;
 }
@@ -1114,6 +1208,15 @@ wahl.addEventListener("change", e => {
   monat = parseInt(e.target.value, 10);
   baueKarten(); zeichne();
 });
+
+document.getElementById("menueNeu").appendChild(
+  machPlus("Eigenes Menü", "z.B. Fondue bei Cherie", txt => {
+    const id = "eigen" + (++zaehlerId);
+    eigeneMenues.push({id: id, titel: txt, eigen: true});
+    gewaehlt.add(id);
+    baueKarten(); zeichne();
+  })
+);
 
 REZEPTE.filter(r => inSaison(r.id)).forEach(r => gewaehlt.add(r.id));
 baueKarten();
